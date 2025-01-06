@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.8">
+
+  <link rel="icon" href="images/favicon.ico">
+
+  <link rel="stylesheet" href="style.css" type="text/css">
+  <script src="script.js" defer></script>
+
+  <title>Track Music Conductor</title>
+</head>
+
+<body>
+  <h1>レール演奏補助ツール</h1>
+
+  <p class="p3">集音生成機能のみ。</p><br>
+  <p class="p3 gray">(Last Update: 2024/Jul/19)</p><br><br>
+
+  <hr>
+  <h2>表計算</h2>
+  <p class="p3">
+    MIDIインポート可! 自動でいい配線を探してくれます。
+
+    <a href="https://www.youtube.com/watch?v=wNRr32pd0Es">解説動画</a>
+  </p><br>
+
+  <p class="p3 bold">MIDIファイル:</p>
+  <input type="file" accept=".mid, .midi, .smf" id="inputSmf">
+
+  <p class="p3 bold">トラック:</p>
+  <select id="selectTrack">
+    <option>1</option><option>2</option><option>3</option><option>4</option>
+    <option>5</option><option>6</option><option>7</option><option>8</option>
+    <option>9</option><option>10</option><option>11</option><option>12</option>
+    <option>13</option><option>14</option><option>15</option><option>16</option>
+  </select><br>
+
+  <button id="buttonLoadSmf">読み込み</button><br><br>
+
+  <p class="p3 bold">羽:</p>
+  <select onchange="changeWing(this.selectedIndex)">
+    <option>あり</option>
+    <option>なし</option>
+  </select><br>
+
+  <div id="divTimeUnit">
+    <p class="p3 bold">4分符音価:</p>
+    <input type="number" id="inputTimeUnit" value="480" oninput="setTimeUnit()"><br>
+  </div>
+
+  <p class="p3 bold">4分符長[f]:</p>
+  <input type="number" id="inputTableBeat" oninput="setTableBeat(this.value)">
+
+  <p class="p3 bold">BPM:</p>
+  <span id="spanTableBpm" class="result"></span><br>
+
+  <p class="p3 bold">基準音階:</p>
+  <select id="selectScale"></select>
+
+  <button onclick="play()">演奏</button>
+
+  <p class="p3 bold">音色:</p>
+  <select id="selectInstrument">
+    <option>正弦波</option><option>三角波</option>
+    <option selected>矩形波</option><option>ノコギリ波</option>
+  </select>
+
+  <button onclick="stopPlay()">演奏停止</button><br>
+
+  <div class="divScroll">
+    <table id="tableInput" class="tableWirings">
+      <tr class="index"><th class="th">番号</th></tr>
+      <tr class="normal"><th class="th">メモ</th></tr>
+      <tr class="input"><th class="th">
+        <select id="selectTableInput" onchange="changeTableInput()">
+          <option>音価</option><option>n分符</option>
+        </select></th>
+      </tr>
+      <tr class="input"><th class="th">符長[f]</th></tr>
+      <tr class="input"><th class="th">yズレ[b]</th></tr>
+    </table>
+  </div><br>
+
+  <p class="p3 bold">読み込みタイプ:</p>
+  <select id="selectLoading" onchange="changeLoading(this.selectedIndex)">
+    <option>開始画面(全て同時)</option>
+    <option>自由落下</option>
+    <option>縦スクロール</option>
+    <option>横スクロール</option>
+  </select>
+
+  <select id="selectLoadingInput" onchange="changeLoadingInput(this.selectedIndex)">
+    <option>カスタム</option>
+    <option selected>平均遅度</option>
+    <option>遅度周期</option>
+  </select><br>
+
+  <div id="divLoadingAve">
+    <p class="p3 bold">平均スクロール遅度[f/b]:</p>
+    <input type="number" id="inputLoadingAve" oninput="setLoadingAve(this.value)">
+
+    <p class="p2">上向き, 右向きを正とする(自由落下 = -4)。</p>
+  </div>
+
+  <div id="divLoadingCycle">
+    <p class="p3 bold">スクロール遅度周期[f/b]:</p>
+    <input type="text" id="inputLoadingCycle" style="height: 35px; width: 200px;" oninput="setLoadingCycle(this.value)">
+
+    <p class="p2">値をコンマ区切りで入力(例: 6, 7, 6, 6, 7)。</p>
+  </div>
+
+  <p class="p3 bold">着線パターン:</p>
+  <select id="selectLanding" onchange="changeLanding(this.selectedIndex)">
+    <option>カスタム</option>
+    <option>1v</option><option>1d</option>
+    <option>2a</option><option>2b</option><option>3</option>
+    <option>4a</option><option>4b</option>
+  </select><br>
+
+  <button onclick="organize()">ここまで計算</button><br>
+
+  <div class="divScroll">
+    <table id="tableWiring" class="tableWirings">
+      <tr class="index"><th class="th">番号</th></tr>
+      <tr class="normal"><th class="th">メモ</th></tr>
+      <tr class="input"><th class="th">遅延[f]</th></tr>
+      <tr class="input"><th class="th">xズレ[f]</th><td>0</td></tr>
+      <tr class="input" style="display: none;"><th class="th">横ス遅延[f]</th><td>0</td></tr>
+      <tr class="input"><th class="th">yズレ[b]</th><td>0</td></tr>
+    </table>
+  </div><br>
+
+  <p class="p3 bold">基準遅延[f]:</p>
+  <input type="number" id="inputBaseDelay">
+
+  <p class="p3 bold">基準高さ[b]:</p>
+  <input type="number" id="inputBaseHeight"><br>
+
+  <button onclick="wiringSort()">並び替えを探す</button>
+
+  <p class="p2 bold">個数:</p>
+  <p class="p2">[<span id="spanEvaluations">◎: ○: △: ×: </span>]</p><br>
+
+  <div class="divScroll">
+    <table id="tableSort" class="tableWirings">
+      <tr class="index"><th class="th">番号</th></tr>
+      <tr class="normal"><th class="th">メモ</th></tr>
+      <tr class="blue"><th class="th">結果[f]</th></tr>
+      <tr class="red"><th class="th">高さ[b]</th></tr>
+      <tr class="normal"><th class="th">配置可</th></tr>
+      <tr class="normal"><th class="th">生成</th></tr>
+    </table>
+  </div><br>
+
+  <button onclick="overview()">全体像を表示 / 非表示</button>
+  <span id="spanOverview" class="result"></span><br>
+
+  <div class="divScroll" id="divOverview">
+    <canvas id="canvasOverview" height="0"></canvas>
+  </div>
+
+  <hr>
+  <h2>縦断線式集音配線生成</h2>
+  <p class="p3">縦レールによる集音(ぜんまいメソッド)の配置を探します。</p><br>
+
+  <canvas id="canvasWiring" width="32" height="320"></canvas>
+  <div class="divWiringGenerator">
+    <p class="p3 bold">狙いの値[f]:</p>
+    <input type="number" id="inputTarget">
+
+    <p class="p3 bold">集音レールとの距離[b]:</p>
+    <input type="number" id="inputHeight">
+
+    <button onclick="target()">探す</button><br>
+
+    <p class="p3 bold">羽:</p>
+    <select id="selectTargetWing" onchange="changeTargetWing(this.selectedIndex)">
+      <option>あり</option>
+      <option>なし</option>
+    </select>
+
+    <p class="p3 bold">着線時の形状:</p>
+    <select id="selectLandingShape">
+      <option selected value="general">通常</option>
+      <option value="second">2マス目</option>
+      <option value="vertical">垂直</option>
+      <option value="diagonal">斜上端</option>
+    </select><br>
+
+    <select id="selectSort" onchange="sort()">
+      <option selected>↑長さ 短い順</option>
+      <option>↑長さ 長い順</option>
+      <option>↓長さ 短い順</option>
+      <option>↓長さ 長い順</option>
+    </select>
+
+    <p class="p2">( 遅延 / ↑長さ / ↓長さ / 表記 )。クリックで画像出ます。<br>
+    <label>
+      <input type="checkbox" id="checkWiringImage" checked>実行時に画像表示(一致の左端の配置)。
+    </label></p><br><br>
+
+    <p class="p3 bold">一致:</p><br>
+    <div id="divSame"></div><br>
+
+    <p class="p3 bold">誤差:</p><br>
+    <div id="divNear"></div><br>
+
+    <p class="p3 bold">もっと誤差:</p><br>
+    <div id="divFar"></div>
+  </div>
+
+  <hr>
+  <h2>画像</h2><br>
+
+  <p class="p3">G = ギャップ, R = レール, b = マス(ブロック)。</p><br>
+  <img src="images/info/gaps.png" height="160">
+  <img src="images/info/height.png" height="160"><br><br>
+
+  <p class="p3">着線パターン。</p><br>
+  <p class="p2">羽ありは1v, 1d, 2a, 2b, 3, 4a, 4b。羽なしはa, bの区別がない。</p><br>
+  <img src="images/info/landing.png" height="220">
+
+</body>
+</html>
