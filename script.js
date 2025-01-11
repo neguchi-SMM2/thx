@@ -1287,9 +1287,9 @@ var accelerationsList = [
     diagonal: [63]
   },
   {
-    general: [17, 11, 7, 5, 3, 1],
-    vertical: [18, 13, 10, 6, 4, 5, 5, 2, 1],
-    diagonal: [18, 12, 9, 6, 4, 4, 3, 2, 1]
+    general: [63],
+    vertical: [63],
+    diagonal: [63]
   }
 ];
 
