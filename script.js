@@ -1281,15 +1281,15 @@ function sort(same, near, far) {
 
 var accelerationsList = [
   {
-    general: [],
-    second: [],
-    vertical: [],
-    diagonal: []
+    general: [42],
+    second: [42],
+    vertical: [42],
+    diagonal: [42]
   },
   {
-    general: [],
-    vertical: [],
-    diagonal: []
+    general: [17, 11, 7, 5, 3, 1],
+    vertical: [18, 13, 10, 6, 4, 5, 5, 2, 1],
+    diagonal: [18, 12, 9, 6, 4, 4, 3, 2, 1]
   }
 ];
 
